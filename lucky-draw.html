@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lucky Draw</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#160a2e;
+  --cabinet:#2b1152;
+  --panel:#1d0b3c;
+  --slot:#0d0520;
+  --gold:#ffc93c;
+  --hot:#ff3d81;
+  --mint:#3ce8c8;
+  --cream:#fff4e2;
+  --cell:92px;
+  --edge:rgba(255,244,226,.14);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(900px 600px at 50% -10%, #3d1a6e 0%, transparent 60%),
+    radial-gradient(700px 500px at 100% 100%, #45114a 0%, transparent 55%),
+    var(--void);
+  color:var(--cream);
+  font-family:"Outfit",system-ui,-apple-system,Segoe UI,sans-serif;
+  overflow-x:hidden;
+}
+.wrap{
+  max-width:1080px;
+  margin:0 auto;
+  padding:32px 20px 64px;
+  display:grid;
+  grid-template-columns:340px 1fr;
+  gap:28px;
+  align-items:start;
+}
+.masthead{grid-column:1 / -1;text-align:center;margin-bottom:4px}
+.masthead h1{
+  font-family:"Bungee",Impact,sans-serif;
+  font-size:clamp(34px,7vw,64px);
+  letter-spacing:.02em;
+  margin:0;
+  color:var(--gold);
+  text-shadow:0 0 18px rgba(255,201,60,.45), 0 6px 0 #7a3f00, 0 10px 26px rgba(0,0,0,.6);
+}
+.masthead p{margin:10px 0 0;color:rgba(255,244,226,.7);font-size:15px}
+
+.rack{
+  background:linear-gradient(180deg,var(--panel),#180833);
+  border:1px solid var(--edge);
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 24px 60px rgba(0,0,0,.5);
+  position:sticky;
+  top:24px;
+}
+.rack h2{font-size:15px;font-weight:800;margin:0 0 14px;letter-spacing:.04em}
+.entry-row{display:flex;gap:8px}
+.entry-row input{
+  flex:1;min-width:0;
+  background:#120627;
+  border:1px solid var(--edge);
+  border-radius:12px;
+  padding:12px 14px;
+  color:var(--cream);
+  font-family:inherit;font-size:15px;
+}
+.entry-row input:focus{outline:2px solid var(--mint);outline-offset:2px}
+.add{
+  background:var(--mint);color:#04231d;border:0;border-radius:12px;
+  padding:0 16px;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer;
+  transition:transform .12s ease, filter .12s ease;
+}
+.add:hover{filter:brightness(1.08)}
+.add:active{transform:scale(.94)}
+.hint{margin:10px 2px 0;font-size:12.5px;color:rgba(255,244,226,.5)}
+.shake{animation:shake .32s}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-7px)}
+  75%{transform:translateX(7px)}
+}
+.chips{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px;max-height:280px;overflow:auto}
+.chip{
+  display:flex;align-items:center;gap:8px;
+  background:#2a1152;border:1px solid var(--edge);
+  border-radius:999px;padding:7px 8px 7px 14px;font-size:14px;
+  animation:pop .3s cubic-bezier(.2,1.6,.4,1);
+}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.chip.out{animation:fly .35s forwards}
+@keyframes fly{to{transform:translateY(-14px) scale(.5);opacity:0}}
+.chip button{
+  background:rgba(255,61,129,.16);color:var(--hot);border:0;border-radius:50%;
+  width:22px;height:22px;line-height:1;cursor:pointer;font-size:14px;font-family:inherit;
+}
+.chip button:hover{background:var(--hot);color:#fff}
+.rack-foot{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:10px}
+.count{font-size:13px;color:rgba(255,244,226,.6)}
+.ghost{
+  background:transparent;border:1px solid var(--edge);color:rgba(255,244,226,.75);
+  border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;cursor:pointer;
+}
+.ghost:hover{border-color:var(--hot);color:var(--hot)}
+.switch{display:flex;align-items:center;gap:10px;margin-top:16px;font-size:14px;cursor:pointer;user-select:none}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.track{width:44px;height:25px;border-radius:999px;background:#120627;border:1px solid var(--edge);position:relative;flex:none;transition:background .2s}
+.track::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:rgba(255,244,226,.5);transition:transform .22s cubic-bezier(.2,1.4,.4,1),background .2s}
+.switch input:checked + .track{background:rgba(60,232,200,.25)}
+.switch input:checked + .track::after{transform:translateX(19px);background:var(--mint)}
+.switch input:focus-visible + .track{outline:2px solid var(--mint);outline-offset:3px}
+
+.machine{
+  background:linear-gradient(180deg,#3a1668,var(--cabinet) 40%,#1b0a38);
+  border:1px solid var(--edge);
+  border-radius:28px;
+  padding:26px 26px 30px;
+  box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08);
+  position:relative;
+}
+.bulbs{display:flex;justify-content:center;gap:10px;margin-bottom:18px}
+.bulbs i{
+  width:11px;height:11px;border-radius:50%;background:var(--gold);
+  box-shadow:0 0 12px var(--gold);
+  animation:blink 1.4s infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.18}}
+.marquee{
+  text-align:center;font-family:"Bungee",Impact,sans-serif;
+  font-size:clamp(15px,2.4vw,20px);color:var(--hot);
+  text-shadow:0 0 14px rgba(255,61,129,.6);
+  margin-bottom:20px;
+}
+.reels{
+  display:flex;gap:12px;justify-content:center;
+  background:var(--slot);
+  border:1px solid var(--edge);
+  border-radius:18px;
+  padding:14px;
+  position:relative;
+}
+.reels.jolt{animation:jolt .3s}
+@keyframes jolt{
+  0%,100%{transform:translate(0,0)}
+  20%{transform:translate(-4px,3px)}
+  50%{transform:translate(5px,-3px)}
+  80%{transform:translate(-3px,2px)}
+}
+.reel{
+  flex:1;min-width:0;
+  height:calc(var(--cell) * 3);
+  overflow:hidden;
+  border-radius:12px;
+  background:linear-gradient(180deg,#1c0b3a,#100626);
+  border:1px solid rgba(255,244,226,.1);
+  position:relative;
+}
+.reel::before,.reel::after{
+  content:"";position:absolute;left:0;right:0;height:34%;z-index:3;pointer-events:none;
+}
+.reel::before{top:0;background:linear-gradient(180deg,#0d0520,transparent)}
+.reel::after{bottom:0;background:linear-gradient(0deg,#0d0520,transparent)}
+.strip{will-change:transform}
+.cell{
+  height:var(--cell);
+  display:flex;align-items:center;justify-content:center;
+  padding:0 10px;
+  font-weight:800;font-size:22px;line-height:1.15;
+  text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:rgba(255,244,226,.55);
+}
+.cell.sm{font-size:17px}
+.cell.xs{font-size:13px;white-space:normal}
+.reel.spinning .strip{filter:blur(1.5px)}
+.reel.landed{animation:landFlash .45s}
+@keyframes landFlash{
+  0%{box-shadow:0 0 0 0 rgba(255,201,60,0)}
+  35%{box-shadow:0 0 0 4px rgba(255,201,60,.7), 0 0 40px rgba(255,201,60,.5)}
+  100%{box-shadow:0 0 0 0 rgba(255,201,60,0)}
+}
+.payline{
+  position:absolute;left:8px;right:8px;top:50%;height:calc(var(--cell) + 6px);
+  transform:translateY(-50%);
+  border-top:2px solid rgba(255,61,129,.5);
+  border-bottom:2px solid rgba(255,61,129,.5);
+  pointer-events:none;z-index:4;border-radius:8px;
+}
+.controls{display:flex;align-items:center;gap:18px;margin-top:24px}
+.spin{
+  flex:1;
+  background:linear-gradient(180deg,var(--hot),#c41d5c);
+  color:#fff;border:0;border-radius:16px;
+  padding:20px;font-family:"Bungee",Impact,sans-serif;font-size:22px;letter-spacing:.03em;
+  cursor:pointer;
+  box-shadow:0 8px 0 #7d0f39, 0 18px 34px rgba(255,61,129,.35);
+  transition:transform .1s ease, box-shadow .1s ease;
+}
+.spin:hover{filter:brightness(1.06)}
+.spin:active{transform:translateY(6px);box-shadow:0 2px 0 #7d0f39}
+.spin:disabled{background:#3a2455;color:rgba(255,244,226,.35);box-shadow:none;cursor:not-allowed;transform:none}
+.spin:focus-visible{outline:3px solid var(--mint);outline-offset:4px}
+.lever{width:56px;height:150px;position:relative;flex:none;cursor:pointer;background:none;border:0;padding:0}
+.lever:disabled{cursor:not-allowed;opacity:.45}
+.lever .arm{
+  position:absolute;left:24px;bottom:16px;width:8px;height:104px;
+  background:linear-gradient(90deg,#8f8f9c,#e6e6ef,#8f8f9c);
+  border-radius:6px;transform-origin:bottom center;
+  transition:transform .28s cubic-bezier(.3,1.5,.5,1);
+}
+.lever .knob{
+  position:absolute;left:12px;top:2px;width:32px;height:32px;border-radius:50%;
+  background:radial-gradient(circle at 32% 30%,#ff8fb4,var(--hot) 55%,#8e0d3d);
+  box-shadow:0 0 18px rgba(255,61,129,.55);
+  transition:transform .28s cubic-bezier(.3,1.5,.5,1);
+}
+.lever .base{position:absolute;left:14px;bottom:0;width:28px;height:20px;border-radius:6px;background:#241046;border:1px solid var(--edge)}
+.lever.pulled .arm{transform:rotate(38deg) scaleY(.72)}
+.lever.pulled .knob{transform:translate(34px,52px)}
+.status{text-align:center;margin-top:16px;font-size:14px;color:rgba(255,244,226,.65);min-height:20px}
+
+.history{grid-column:1 / -1;margin-top:8px}
+.history h2{font-size:14px;font-weight:800;margin:0 0 12px;color:rgba(255,244,226,.7)}
+.history ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.history li{
+  background:rgba(255,201,60,.12);border:1px solid rgba(255,201,60,.35);
+  color:var(--gold);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:600;
+}
+.history .idx{opacity:.55;margin-right:6px}
+
+.veil{
+  position:fixed;inset:0;z-index:20;display:grid;place-items:center;
+  background:rgba(11,4,24,.82);backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.veil.on{opacity:1;pointer-events:auto}
+.prize{
+  background:linear-gradient(180deg,#3a1668,#1b0a38);
+  border:2px solid var(--gold);
+  border-radius:26px;padding:40px 44px;text-align:center;max-width:min(90vw,520px);
+  box-shadow:0 0 80px rgba(255,201,60,.35);
+  transform:scale(.7);opacity:0;transition:transform .45s cubic-bezier(.2,1.5,.4,1),opacity .3s;
+}
+.veil.on .prize{transform:scale(1);opacity:1}
+.prize .label{font-family:"Bungee",Impact,sans-serif;color:var(--hot);font-size:18px;margin-bottom:14px}
+.prize .name{
+  font-family:"Bungee",Impact,sans-serif;color:var(--gold);
+  font-size:clamp(28px,6vw,50px);line-height:1.15;word-break:break-word;
+  text-shadow:0 0 30px rgba(255,201,60,.6);
+  animation:throb 1.6s ease-in-out infinite;
+}
+@keyframes throb{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+.prize .row{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+.prize .again{background:var(--gold);color:#3a1f00;border:0;border-radius:12px;padding:13px 22px;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer}
+.prize .again:hover{filter:brightness(1.08)}
+canvas.confetti{position:fixed;inset:0;pointer-events:none;z-index:25}
+
+@media (max-width:860px){
+  .wrap{grid-template-columns:1fr;gap:22px}
+  .rack{position:static}
+  :root{--cell:74px}
+  .cell{font-size:18px}
+  .lever{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .bulbs i,.prize .name{animation:none}
+  *{transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <h1>Lucky Draw</h1>
+    <p>Add your entries, pull the lever, and let the reels pick one.</p>
+  </header>
+
+  <aside class="rack">
+    <h2>Entries</h2>
+    <div class="entry-row">
+      <input id="field" type="text" placeholder="Type a name and press Enter" autocomplete="off">
+      <button class="add" id="addBtn">Add</button>
+    </div>
+    <p class="hint">Paste several at once, separated by commas or new lines.</p>
+    <ul class="chips" id="chips"></ul>
+    <label class="switch">
+      <input type="checkbox" id="removeWinner">
+      <span class="track"></span>
+      <span>Remove the winner after each draw</span>
+    </label>
+    <div class="rack-foot">
+      <span class="count" id="count">0 entries</span>
+      <button class="ghost" id="clearBtn">Clear all</button>
+    </div>
+  </aside>
+
+  <main class="machine">
+    <div class="bulbs" id="bulbs"></div>
+    <p class="marquee">One name walks away with it</p>
+    <div class="reels" id="reels">
+      <div class="reel"><div class="strip" id="s0"></div></div>
+      <div class="reel"><div class="strip" id="s1"></div></div>
+      <div class="reel"><div class="strip" id="s2"></div></div>
+      <div class="payline"></div>
+    </div>
+    <div class="controls">
+      <button class="spin" id="spinBtn" disabled>Spin</button>
+      <button class="lever" id="lever" disabled aria-label="Pull the lever to spin">
+        <span class="arm"></span>
+        <span class="knob"></span>
+        <span class="base"></span>
+      </button>
+    </div>
+    <p class="status" id="status">Add at least one entry to start.</p>
+  </main>
+
+  <section class="history" id="historyBox" hidden>
+    <h2>Past winners</h2>
+    <ol id="history"></ol>
+  </section>
+</div>
+
+<div class="veil" id="veil">
+  <div class="prize">
+    <div class="label">Winner</div>
+    <div class="name" id="prizeName"></div>
+    <div class="row">
+      <button class="again" id="againBtn">Draw again</button>
+      <button class="ghost" id="closeBtn">Close</button>
+    </div>
+  </div>
+</div>
+<canvas class="confetti" id="cv"></canvas>
+
+<script>
+const entries = [];
+const winners = [];
+const strips = [document.getElementById("s0"), document.getElementById("s1"), document.getElementById("s2")];
+const reels = strips.map(s => s.parentElement);
+const field = document.getElementById("field");
+const chips = document.getElementById("chips");
+const countEl = document.getElementById("count");
+const spinBtn = document.getElementById("spinBtn");
+const lever = document.getElementById("lever");
+const statusEl = document.getElementById("status");
+const veil = document.getElementById("veil");
+const prizeName = document.getElementById("prizeName");
+const historyBox = document.getElementById("historyBox");
+const historyEl = document.getElementById("history");
+const removeToggle = document.getElementById("removeWinner");
+const reelBox = document.getElementById("reels");
+let spinning = false;
+
+const bulbs = document.getElementById("bulbs");
+for (let i = 0; i < 13; i++) {
+  const b = document.createElement("i");
+  b.style.animationDelay = (i * 0.11) + "s";
+  bulbs.appendChild(b);
+}
+
+let audio = null;
+function tone(freq, dur, type, gain) {
+  try {
+    if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    o.type = type || "square";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(gain || 0.05, audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + dur);
+    o.connect(g); g.connect(audio.destination);
+    o.start(); o.stop(audio.currentTime + dur);
+  } catch (e) {}
+}
+
+function cellHeight() {
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cell"));
+}
+
+function makeCell(text) {
+  const d = document.createElement("div");
+  d.className = "cell" + (text.length > 20 ? " xs" : text.length > 11 ? " sm" : "");
+  d.textContent = text;
+  return d;
+}
+
+function shuffled(list) {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function paintIdle() {
+  strips.forEach(s => {
+    s.style.transition = "none";
+    s.style.transform = "translateY(0)";
+    s.innerHTML = "";
+    const base = entries.length ? shuffled(entries).slice(0, 3) : ["?", "?", "?"];
+    while (base.length < 3) base.push(base[0]);
+    base.forEach(t => s.appendChild(makeCell(t)));
+  });
+}
+
+function render() {
+  chips.innerHTML = "";
+  entries.forEach((name, i) => {
+    const li = document.createElement("li");
+    li.className = "chip";
+    const span = document.createElement("span");
+    span.textContent = name;
+    const x = document.createElement("button");
+    x.textContent = "\u00d7";
+    x.setAttribute("aria-label", "Remove " + name);
+    x.onclick = () => {
+      li.classList.add("out");
+      setTimeout(() => { entries.splice(i, 1); render(); paintIdle(); }, 300);
+    };
+    li.appendChild(span); li.appendChild(x);
+    chips.appendChild(li);
+  });
+  countEl.textContent = entries.length + (entries.length === 1 ? " entry" : " entries");
+  const ready = entries.length > 0 && !spinning;
+  spinBtn.disabled = !ready;
+  lever.disabled = !ready;
+  if (!spinning) statusEl.textContent = entries.length ? "Ready when you are." : "Add at least one entry to start.";
+}
+
+function addFrom(raw) {
+  const parts = raw.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+  if (!parts.length) return false;
+  let added = 0;
+  parts.forEach(p => {
+    const clean = p.slice(0, 60);
+    if (!entries.some(e => e.toLowerCase() === clean.toLowerCase())) { entries.push(clean); added++; }
+  });
+  if (!added) {
+    field.classList.add("shake");
+    statusEl.textContent = "That one is already in the list.";
+    setTimeout(() => field.classList.remove("shake"), 340);
+    return false;
+  }
+  tone(660, 0.08, "triangle", 0.04);
+  render(); paintIdle();
+  return true;
+}
+
+document.getElementById("addBtn").onclick = () => { if (addFrom(field.value)) field.value = ""; field.focus(); };
+field.addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); if (addFrom(field.value)) field.value = ""; }
+});
+document.getElementById("clearBtn").onclick = () => {
+  if (spinning) return;
+  entries.length = 0; render(); paintIdle();
+};
+
+function ticker(duration) {
+  const start = performance.now();
+  function next() {
+    const t = (performance.now() - start) / duration;
+    if (t >= 1) return;
+    tone(240 + Math.random() * 90, 0.03, "square", 0.03);
+    setTimeout(next, 34 + 210 * Math.pow(t, 3));
+  }
+  next();
+}
+
+function spinReel(strip, winner, duration) {
+  return new Promise(resolve => {
+    const cell = cellHeight();
+    const pool = entries.length ? entries : [winner];
+    const cells = [];
+    const loops = Math.max(6, Math.ceil(42 / pool.length));
+    for (let l = 0; l < loops; l++) shuffled(pool).forEach(v => cells.push(v));
+    cells.push(winner);
+    cells.push(pool[Math.floor(Math.random() * pool.length)]);
+    cells.push(pool[Math.floor(Math.random() * pool.length)]);
+    const winIdx = cells.length - 3;
+
+    strip.style.transition = "none";
+    strip.style.transform = "translateY(0)";
+    strip.innerHTML = "";
+    cells.forEach(v => strip.appendChild(makeCell(v)));
+    void strip.offsetHeight;
+
+    strip.parentElement.classList.add("spinning");
+    strip.parentElement.classList.remove("landed");
+    strip.style.transition = "transform " + duration + "ms cubic-bezier(.12,.62,.16,1)";
+    strip.style.transform = "translateY(" + (-(winIdx - 1) * cell) + "px)";
+
+    setTimeout(() => strip.parentElement.classList.remove("spinning"), duration - 500);
+    setTimeout(() => {
+      strip.parentElement.classList.add("landed");
+      reelBox.classList.remove("jolt");
+      void reelBox.offsetWidth;
+      reelBox.classList.add("jolt");
+      tone(520, 0.12, "square", 0.06);
+      resolve();
+    }, duration);
+  });
+}
+
+async function draw() {
+  if (spinning || !entries.length) return;
+  spinning = true;
+  render();
+  spinBtn.disabled = true; lever.disabled = true;
+  statusEl.textContent = "Spinning...";
+  lever.classList.add("pulled");
+  setTimeout(() => lever.classList.remove("pulled"), 420);
+
+  const winner = entries[Math.floor(Math.random() * entries.length)];
+  const times = [2600, 3500, 4400];
+  ticker(times[2]);
+  await Promise.all(strips.map((s, i) => spinReel(s, winner, times[i])));
+
+  await new Promise(r => setTimeout(r, 320));
+  prizeName.textContent = winner;
+  veil.classList.add("on");
+  burst();
+  [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.4, "triangle", 0.07), i * 110));
+
+  winners.push(winner);
+  historyBox.hidden = false;
+  historyEl.innerHTML = "";
+  winners.forEach((w, i) => {
+    const li = document.createElement("li");
+    const n = document.createElement("span");
+    n.className = "idx"; n.textContent = i + 1;
+    li.appendChild(n); li.appendChild(document.createTextNode(w));
+    historyEl.appendChild(li);
+  });
+
+  if (removeToggle.checked) {
+    const at = entries.findIndex(e => e === winner);
+    if (at > -1) entries.splice(at, 1);
+  }
+  spinning = false;
+  render();
+  statusEl.textContent = entries.length ? "Ready when you are." : "The list is empty. Add more entries to draw again.";
+}
+
+spinBtn.onclick = draw;
+lever.onclick = draw;
+document.getElementById("closeBtn").onclick = () => veil.classList.remove("on");
+document.getElementById("againBtn").onclick = () => { veil.classList.remove("on"); setTimeout(draw, 350); };
+veil.addEventListener("click", e => { if (e.target === veil) veil.classList.remove("on"); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") veil.classList.remove("on");
+  if (e.code === "Space" && document.activeElement !== field) {
+    e.preventDefault();
+    if (!spinning && entries.length) draw();
+  }
+});
+
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+let bits = [];
+function size() { cv.width = innerWidth; cv.height = innerHeight; }
+size(); addEventListener("resize", size);
+function burst() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const colors = ["#ffc93c", "#ff3d81", "#3ce8c8", "#fff4e2", "#a06bff"];
+  for (let i = 0; i < 170; i++) {
+    bits.push({
+      x: cv.width / 2 + (Math.random() - 0.5) * 220,
+      y: cv.height / 2 + (Math.random() - 0.5) * 80,
+      vx: (Math.random() - 0.5) * 15,
+      vy: Math.random() * -15 - 4,
+      w: 6 + Math.random() * 8,
+      h: 8 + Math.random() * 10,
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.35,
+      c: colors[Math.floor(Math.random() * colors.length)],
+      life: 1
+    });
+  }
+}
+function frame() {
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  bits = bits.filter(p => p.life > 0);
+  bits.forEach(p => {
+    p.vy += 0.42; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+    p.vx *= 0.99;
+    if (p.y > cv.height + 60) p.life = 0;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle = p.c;
+    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    ctx.restore();
+  });
+  requestAnimationFrame(frame);
+}
+frame();
+
+["Aarav", "Diya", "Kabir", "Meera", "Rohan"].forEach(n => entries.push(n));
+render();
+paintIdle();
+</script>
+</body>
+</html>
